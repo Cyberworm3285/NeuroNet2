@@ -15,46 +15,55 @@ namespace NeuroNet2
     {
         static void Main(string[] args)
         {
-            B();
+            A();
         }
 
         static void A()
         {
             FullMesh<double> mesh = new FullMesh<double>(
             inputCounts: 2,
-            neuroCounts: new int[] { 5, 5, 5, 1 },
+            neuroCounts: new int[] { 10, 1 },
             errorFunction: (a, b) => Math.Abs(a - b),
-            activationFunction: d => d,
+            activationFunction: TangensHyperbolicus,
             adderFunction: (a, b) => a + b,
             weightingFunction: (a, b) => a * b,
             defaultWeight: 0.5
             );
 
+            Func<double, double, double>[] funcs = new Func<double, double, double>[]
+            {
+                (a,b) => a+b,
+                (a,b) => a-b,
+                (a,b) => a*b,
+                (a,b) => a%b,
+            };
+
             double[][] input = new double[][]
             {
                 new[] { 0.0, 0.0 },
                 new[] { 0.0, 1.0 },
-                new[] { 2.0, 4.0 },
-                new[] { 10.0, 1.0 },
+                new[] { 1.0, 0.0 },
+                new[] { 1.0, 1.0 },
             };
 
             double[][] output = new double[][]
 {
+                new[] { 1.0},
+                new[] { 1.0},
                 new[] { 0.0},
                 new[] { 1.0},
-                new[] { 6.0},
-                new[] { 11.0},
             };
 
-            for (int i = 0; i < 20; i++)
-                mesh.LearnIteration(new DeepRandom<double>(250, d => d + GlobalRandom.Get.NextDouble() * 0.4 - 0.2) { PrintProgress = true }, input, output, -0.0001);
-            for (int i = 0; i < 10000 && mesh.LastError > 0.00001; i++)
-                Console.WriteLine(mesh.LearnIteration(new Evolution<double>(d => d + GlobalRandom.Get.NextDouble() * 0.4 - 0.2), input, output, -0.00001));
-            //mesh.LearnIteration(new BruteForce<double>(d => d + GlobalRandom.Get.NextDouble() * 0.4 - 0.2) { PrintProgress = true }, input, output, 0.01);
+            //for (int i = 0; i < 20; i++)
+            //    mesh.LearnIteration(new DeepRandom<double>(250, d => d + GlobalRandom.Get.NextDouble() * 0.4 - 0.2) { PrintProgress = true }, input, output, -0.0001);
+            //for (int i = 0; i < 10000 && mesh.LastError > 0.00001; i++)
+            //    mesh.LearnIteration(new Evolution<double>(d => d + GlobalRandom.Get.NextDouble() * 0.4 - 0.2), input, output, -0.00001);
+            mesh.LearnIteration(new BruteForce<double>(d => d + GlobalRandom.Get.NextDouble() * 0.4 - 0.2, () => funcs[GlobalRandom.Get.Next(0, funcs.Length)]) { PrintProgress = true }, input, output, 0.01);
 
             Array.ForEach(input, d => Console.WriteLine(Format(d) + " : " + Format(mesh.Calc(d))));
 
-            Console.ReadKey();
+            while(true)
+                Console.WriteLine(Format(mesh.Calc(Console.ReadLine().Split(' ').Select(s => double.Parse(s)).ToArray())));
         }
 
         static void B()
@@ -72,9 +81,21 @@ namespace NeuroNet2
             Func<bool, bool, bool>[] funcs = new Func<bool, bool, bool>[]
             {
                 (a,b) => !(a&&b),
+                (a,b) => !(!a&&b),
+                (a,b) => !(a&&!b),
+                (a,b) => !(!a&&!b),
                 (a,b) => a&&b,
+                (a,b) => !a&&b,
+                (a,b) => a&&!b,
+                (a,b) => !a&&!b,
                 (a,b) => !(a||b),
-                (a,b) => a||b
+                (a,b) => !(!a||b),
+                (a,b) => !(a||!b),
+                (a,b) => !(!a||!b),
+                (a,b) => a||b,
+                (a,b) => !a||b,
+                (a,b) => a||!b,
+                (a,b) => !a||!b,
             };
 
             mesh.Neurons.ForEach(n => n.ForEach(nn => nn.WeightingFunction = funcs[GlobalRandom.Get.Next(0, funcs.Length)]));
@@ -89,18 +110,14 @@ namespace NeuroNet2
 
             bool[][] output = new bool[][]
             {
-                new[] { false },
                 new[] { true },
                 new[] { true },
                 new[] { false },
+                new[] { true },
             };
 
 
-            mesh.LearnIteration(new BruteForce<bool>(b => !b) { PrintProgress = true }, input, output, 0.01);
-            //for (int i = 0; i < 20; i++)
-            //    mesh.LearnIteration(new DeepRandom<bool>(250, d => !d) { PrintProgress = true }, input, output, -0.0001);
-            //for (int i = 0; i < 10000 && mesh.LastError > 0.00001; i++)
-            //    Console.WriteLine(mesh.LearnIteration(new Evolution<bool>(b => !b), input, output, -0.00001));
+            mesh.LearnIteration(new BruteForce<bool>(b => b, () => funcs[GlobalRandom.Get.Next(0, funcs.Length)]) { PrintProgress = true }, input, output, 0.01);
 
             Array.ForEach(input, d => Console.WriteLine(Format(d) + " : " + Format(mesh.Calc(d))));
 

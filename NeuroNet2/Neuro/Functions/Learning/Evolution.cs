@@ -31,6 +31,7 @@ namespace NeuroNet2.Neuro.Functions.Learning
 
             if (temp - net.LastError < switchThreshold)
             {
+                Console.WriteLine("new Error : " + temp);
                 return temp;
             }
             else
