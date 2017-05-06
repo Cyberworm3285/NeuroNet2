@@ -8,8 +8,8 @@ using NeuroNet2.Neuro.Mesh;
 
 namespace NeuroNet2.Neuro.Functions.Learning
 {
-    interface INeuroLearning<T>
+    interface INeuroLearning<TInput, TOutput, TWeight, TActivator>
     {
-        double LearnIteration(FullMesh<T> net, T[][] input, T[][] output, double switchThreshold);
+        double LearnIteration(FullMesh<TInput, TOutput, TWeight, TActivator> net, TInput[][] input, TOutput[][] output, double switchThreshold);
     }
 }

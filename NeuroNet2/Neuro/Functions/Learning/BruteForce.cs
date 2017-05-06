@@ -9,19 +9,21 @@ using NeuroNet2.Global;
 
 namespace NeuroNet2.Neuro.Functions.Learning
 {
-    class BruteForce<T> : INeuroLearning<T>
+    class BruteForce<TInput, TOutput, TWeight, TActivator> : INeuroLearning<TInput, TOutput, TWeight, TActivator>
     {
-        public Func<T, T> Permutater { get; set; }
-        public Func<Func<T, T, T>> WeightingChanging { get; set; }
+        public Func<TWeight, TWeight> Permutater { get; set; }
+        public Func<Func<TInput, TWeight, TInput>, Func<TInput, TWeight, TInput>> WeightingChanging { get; set; }
+        public Func<Func<TActivator, TOutput>, Func<TActivator, TOutput>> ActivationChanging { get; set; }
         public bool PrintProgress { get; set; }
 
-        public BruteForce(Func<T, T> mutater, Func<Func<T, T, T>> weightingChange)
+        public BruteForce(Func<TWeight, TWeight> mutater, Func<Func<TInput, TWeight, TInput>, Func<TInput, TWeight, TInput>> weightingChange, Func<Func<TActivator, TOutput>, Func<TActivator, TOutput>> activationChange)
         {
             Permutater = mutater;
             WeightingChanging = weightingChange;
+            ActivationChanging = activationChange;
         }
 
-        public double LearnIteration(FullMesh<T> net, T[][] input, T[][] output, double switchThreshold)
+        public double LearnIteration(FullMesh<TInput, TOutput, TWeight, TActivator> net, TInput[][] input, TOutput[][] output, double switchThreshold)
         {
             double lastError = net.LastError;
             int counter = 1;
@@ -31,7 +33,8 @@ namespace NeuroNet2.Neuro.Functions.Learning
                 int y = GlobalRandom.Get.Next(0, net.Neurons[x].Count);
                 int w = GlobalRandom.Get.Next(0, net.Neurons[x][y].Weights.Count);
                 net.Neurons[x][y].Weights[w] = Permutater(net.Neurons[x][y].Weights[w]);
-                net.Neurons[x][y].WeightingFunction = WeightingChanging();
+                net.Neurons[x][y].WeightingFunction = WeightingChanging(net.Neurons[x][y].WeightingFunction);
+                net.Neurons[x][y].ActivationFunction = ActivationChanging(net.Neurons[x][y].ActivationFunction);
                 lastError = net.GetError(input.Select(i => net.Calc(i)).ToArray(), output);
                 if (PrintProgress)
                     Console.WriteLine(counter ++ + ": Curr Error : " + lastError);
